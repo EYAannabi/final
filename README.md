@@ -58,40 +58,159 @@ Modifier
 
 ---
 
-## 🔁 Diagramme de classes
+# 📐 Diagramme de Classes - Village Under Attack
 
-lua
-Copier
-Modifier
-           Entity
-             |
- -------------------------
- |                       |
-Player Npc
-|
------------------------------
-| |
-Enemy Troop
-| |
-Raider ---------------|---------
-| |
-Barbarian Archer
+```mermaid
+classDiagram
+    %% =============================================
+    %% CORE GAME CLASSES
+    %% =============================================
+    class Position {
+        +int x
+        +int y
+    }
 
-markdown
-Copier
-Modifier
-     Building
-        |
-| | | |
-Wall TownHall ResourceGenerator Barrack
-|
----------------------
-| |
-GoldMine ElixirCollector
+    class Resources {
+        +int gold
+        +int elixir
+        +getGold() int
+        +getElixir() int
+        +spendGold(int) bool
+        +spendElixir(int) bool
+    }
 
-yaml
-Copier
-Modifier
+    class Board {
+        +vector~Building*~ buildings
+        +vector~Entity*~ entities
+        +addEntity(Entity*)
+        +addBuilding(Building*)
+        +render(SDL_Renderer*)
+        +update()
+    }
+
+    %% =============================================
+    %% ENTITY HIERARCHY
+    %% =============================================
+    class Entity {
+        <<abstract>>
+        #Position position
+        #string repr
+        +move(int dx, int dy)
+        +update(Board&) virtual
+        +render(SDL_Renderer*) virtual
+    }
+
+    class Player {
+        +Resources resources
+        +Interact(Board&)
+        +collectResources(ResourceGenerator*)
+    }
+
+    class Npc {
+        <<abstract>>
+        +int health
+        +int attackDamage
+        +moveTowards(Board&, Position)
+    }
+
+    Entity <|-- Player
+    Entity <|-- Npc
+
+    %% ----------------------------
+    %% NPC SUBCLASSES
+    %% ----------------------------
+    class Enemy {
+        <<abstract>>
+        +bool targeted
+    }
+
+    class Troop {
+        <<abstract>>
+        +int speed
+        +attack(Board&)
+    }
+
+    Npc <|-- Enemy
+    Npc <|-- Troop
+
+    class Raider {
+        +destroyBuilding(Building*)
+    }
+
+    class Barbarian {
+        +meleeAttack()
+    }
+
+    class Archer {
+        +rangeAttack()
+    }
+
+    Enemy <|-- Raider
+    Troop <|-- Barbarian
+    Troop <|-- Archer
+
+    %% =============================================
+    %% BUILDING HIERARCHY
+    %% =============================================
+    class Building {
+        <<abstract>>
+        #Position p
+        #int sizeX
+        #int sizeY
+        #SDL_Texture* texture
+        +collidesWith(Position) bool
+        +render(SDL_Renderer*) virtual
+    }
+
+    %% ----------------------------
+    %% BUILDING SUBCLASSES
+    %% ----------------------------
+    class TownHall {
+        +bool destroyed
+        +produceResources()
+    }
+
+    class Wall {
+        +int defense
+        +takeDamage(int)
+    }
+
+    class ResourceGenerator {
+        <<abstract>>
+        #int productionRate
+        +collect(Resources&) virtual
+    }
+
+    class Barrack {
+        +queue~Troop*~ trainingQueue
+        +train(Troop*)
+    }
+
+    Building <|-- TownHall
+    Building <|-- Wall
+    Building <|-- ResourceGenerator
+    Building <|-- Barrack
+
+    class GoldMine {
+        +mineGold()
+    }
+
+    class ElixirCollector {
+        +collectElixir()
+    }
+
+    ResourceGenerator <|-- GoldMine
+    ResourceGenerator <|-- ElixirCollector
+
+    %% =============================================
+    %% KEY RELATIONSHIPS
+    %% =============================================
+    Board "1" *-- "*" Entity
+    Board "1" *-- "*" Building
+    Player "1" --> "1" Resources
+    Barrack "1" --> "*" Troop
+    Raider "1" --> "1" Building : Attacks
+    Troop "1" --> "1" Enemy : Attacks
 
 ---
 
